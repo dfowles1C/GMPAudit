@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Walkthrough Audit Report — BIA Mattress</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --blue-600: #0074bc;
+    --blue-700: #005c96;
+    --blue-800: #00456f;
+    --blue-900: #082f4a;
+    --red-600: #d9332d;
+    --white: #ffffff;
+    --ink: #171717;
+    --gray-25: #fafaf9;
+    --gray-50: #f5f4f2;
+    --gray-100: #ebe9e5;
+    --gray-200: #dcd9d3;
+    --gray-300: #c2beb6;
+    --gray-400: #96918a;
+    --gray-500: #726d66;
+    --gray-600: #56524d;
+
+    --status-full-bg: #dceee2; --status-full-text: #1f5c36;
+    --status-minor-bg: #fbead0; --status-minor-text: #8a5a08;
+    --status-major-bg: #fbdad9; --status-major-text: #8a1a17;
+    --status-na-bg: #ebe9e5; --status-na-text: #56524d;
+    --status-pending-bg: #f5f4f2; --status-pending-text: #96918a;
+
+    --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+    --font-body: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font: 400 16px/1.55 var(--font-body);
+    color: var(--ink);
+    background: var(--gray-100);
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--white);
+    box-shadow: 0 4px 24px rgba(23,23,23,0.10);
+  }
+
+  /* Toolbar (screen only) */
+  .toolbar {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 12px 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .save-status {
+    font-size: 12.5px;
+    color: var(--gray-500);
+    min-height: 1.2em;
+  }
+  .toolbar button {
+    font: 600 13px/1 var(--font-body);
+    letter-spacing: 0.02em;
+    padding: 12px 16px;
+    min-height: 44px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    color: var(--blue-900);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toolbar button.primary {
+    background: var(--blue-600);
+    border-color: var(--blue-600);
+    color: var(--white);
+  }
+  .toolbar button:hover { filter: brightness(0.97); }
+  .toolbar button:active { transform: scale(0.98); }
+
+  /* Logo banner */
+  .logo-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .logo-banner img { height: 44px; width: auto; display: block; }
+  .logo-banner .eyebrow {
+    font: 600 13px/1.2 var(--font-body);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+  }
+
+  /* Title bar */
+  .title-bar {
+    background: var(--blue-900);
+    color: var(--white);
+    padding: 28px 32px 24px;
+  }
+  .title-bar .eyebrow {
+    font: 600 13px/1.2 var(--font-body);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue-100, #cbe4f4);
+    margin-bottom: 6px;
+  }
+  .title-bar h1 {
+    font: 700 40px/1.05 var(--font-display);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+    letter-spacing: 0.01em;
+  }
+  .title-bar .subtitle {
+    font: 400 16px/1.4 var(--font-body);
+    color: #cfe0ec;
+  }
+  .title-rule { height: 4px; background: var(--red-600); }
+
+  /* Document control table */
+  .doc-control { padding: 24px 32px; }
+  .doc-control table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--gray-300);
+  }
+  .doc-control th, .doc-control td {
+    border: 1px solid var(--gray-300);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  .doc-control th {
+    background: var(--gray-50);
+    font: 600 12px/1.2 var(--font-body);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    width: 220px;
+  }
+  .doc-control input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font: 400 14px/1.4 var(--font-body);
+    color: var(--ink);
+    padding: 2px 0;
+  }
+  .doc-control input::placeholder { color: var(--gray-400); }
+  .doc-control input:focus { outline: none; border-bottom: 1px solid var(--blue-600); }
+
+  /* Section wrapper */
+  .section { padding: 8px 32px 24px; }
+  .section h2.section-title {
+    font: 600 22px/1.2 var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    color: var(--blue-900);
+    border-bottom: 2px solid var(--blue-600);
+    padding-bottom: 8px;
+    margin: 24px 0 16px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .legend-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    flex: 1 1 220px;
+  }
+  .legend-chip .label { font-weight: 700; }
+  .legend-chip .desc { color: inherit; opacity: 0.85; }
+  .legend-full { background: var(--status-full-bg); color: var(--status-full-text); }
+  .legend-minor { background: var(--status-minor-bg); color: var(--status-minor-text); }
+  .legend-major { background: var(--status-major-bg); color: var(--status-major-text); }
+  .legend-na { background: var(--status-na-bg); color: var(--status-na-text); }
+  .legend-pending { background: var(--status-pending-bg); color: var(--status-pending-text); }
+
+  /* Dashboard tiles */
+  .dashboard {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .tile {
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+    background: var(--gray-25);
+  }
+  .tile .tile-value {
+    font: 700 28px/1 var(--font-display);
+    color: var(--blue-900);
+  }
+  .tile .tile-label {
+    font: 600 11px/1.3 var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray-500);
+    margin-top: 4px;
+  }
+  .tile.ready .tile-value { color: var(--blue-600); }
+
+  /* Checklist tables */
+  .category-block { margin-bottom: 28px; }
+  .category-title {
+    font: 600 16px/1.2 var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue-600);
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.checklist-table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .checklist-table th {
+    background: var(--blue-900);
+    color: var(--white);
+    font: 600 11px/1.2 var(--font-body);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 8px 10px;
+  }
+  .checklist-table td {
+    border: 1px solid var(--gray-300);
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  .checklist-table tbody tr:nth-child(even) { background: var(--gray-50); }
+  .col-num { width: 32px; text-align: center; color: var(--gray-500); }
+  .col-clause { width: 80px; color: var(--gray-600); font-weight: 600; white-space: nowrap; }
+  .col-criteria { width: auto; }
+  .criteria-text { margin-bottom: 4px; }
+  .verify-hint { font-size: 12px; color: var(--gray-500); font-style: italic; }
+  .col-status { width: 170px; }
+  .col-notes { width: 240px; }
+
+  select.status-select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    font: 600 12.5px/1.2 var(--font-body);
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
+  }
+  select.status-select[data-status="full"] { background: var(--status-full-bg); color: var(--status-full-text); border-color: transparent; }
+  select.status-select[data-status="minor"] { background: var(--status-minor-bg); color: var(--status-minor-text); border-color: transparent; }
+  select.status-select[data-status="major"] { background: var(--status-major-bg); color: var(--status-major-text); border-color: transparent; }
+  select.status-select[data-status="na"] { background: var(--status-na-bg); color: var(--status-na-text); border-color: transparent; }
+
+  textarea.notes-field {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font: 400 13px/1.4 var(--font-body);
+    color: var(--ink);
+  }
+
+  /* Comments & observations */
+  .comments-hint {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0 0 10px;
+  }
+  textarea.comments-field {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font: 400 14px/1.55 var(--font-body);
+    color: var(--ink);
+    background: var(--gray-25);
+  }
+  textarea.comments-field:focus { outline: none; border-color: var(--blue-600); }
+
+  /* Findings table */
+  table.findings-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .findings-table th {
+    background: var(--blue-600);
+    color: var(--white);
+    font: 600 11px/1.2 var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 8px 8px;
+    text-align: left;
+  }
+  .findings-table td {
+    border: 1px solid var(--gray-300);
+    padding: 8px;
+    vertical-align: top;
+  }
+  .findings-table input, .findings-table textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font: 400 13px/1.4 var(--font-body);
+  }
+  .findings-table input::placeholder, .findings-table textarea::placeholder { color: var(--gray-400); }
+
+  .col-remove { text-align: center; padding: 4px !important; }
+  .remove-row-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    color: var(--gray-500);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .remove-row-btn:hover { background: var(--status-major-bg); color: var(--status-major-text); border-color: transparent; }
+
+  .add-row-btn {
+    margin-top: 10px;
+    font: 600 13px/1 var(--font-body);
+    letter-spacing: 0.02em;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: 1px dashed var(--blue-600);
+    background: var(--blue-50, #eaf4fb);
+    color: var(--blue-700);
+    cursor: pointer;
+  }
+  .add-row-btn:hover { background: var(--blue-100, #cbe4f4); }
+
+  @media print {
+    .no-print { display: none !important; }
+  }
+
+  /* Sign-off */
+  .signoff {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 8px;
+  }
+  .signoff-block {
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .signoff-block h3 {
+    font: 600 13px/1.2 var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--blue-900);
+    margin: 0 0 12px;
+  }
+  .signoff-field { margin-bottom: 12px; }
+  .signoff-field label {
+    display: block;
+    font: 600 11px/1.2 var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+  }
+  .signoff-field input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--gray-300);
+    padding: 6px 2px;
+    font: 400 14px/1.4 var(--font-body);
+  }
+  .signoff-field input:focus { outline: none; border-bottom-color: var(--blue-600); }
+
+  /* Footer */
+  .footer {
+    padding: 16px 32px 28px;
+    border-top: 1px solid var(--gray-200);
+    font-size: 12px;
+    color: var(--gray-500);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media print {
+    body { background: var(--white); }
+    .toolbar { display: none; }
+    .page { box-shadow: none; max-width: none; }
+    .category-block { page-break-inside: avoid; }
+    select.status-select { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  @media (max-width: 720px) {
+    .logo-banner, .title-bar, .doc-control, .section { padding-left: 18px; padding-right: 18px; }
+    .title-bar { padding-top: 22px; padding-bottom: 18px; }
+    .title-bar h1 { font-size: 30px; }
+    .dashboard { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .tile { padding: 10px 6px; }
+    .tile .tile-value { font-size: 22px; }
+    .signoff { grid-template-columns: 1fr; }
+    .legend-chip { flex: 1 1 100%; }
+  }
+
+  @media (max-width: 480px) {
+    .toolbar { padding-left: 12px; padding-right: 12px; }
+    .toolbar-actions { width: 100%; }
+    .toolbar-actions button { flex: 1 1 auto; }
+    .logo-banner { padding: 16px 14px; }
+    .logo-banner img { height: 34px; }
+    .logo-banner .eyebrow { font-size: 11px; }
+    .title-bar { padding: 18px 14px 16px; }
+    .title-bar h1 { font-size: 24px; }
+    .title-bar .subtitle { font-size: 14px; }
+    .doc-control { padding: 16px 14px; }
+    .section { padding: 8px 14px 20px; }
+    .dashboard { grid-template-columns: repeat(2, 1fr); }
+
+    /* Stack the document-control table into label/value rows on narrow screens */
+    .doc-control table, .doc-control tbody, .doc-control tr, .doc-control th, .doc-control td {
+      display: block;
+      width: 100%;
+    }
+    .doc-control tr {
+      border: none;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 8px 0;
+    }
+    .doc-control tr:last-child { border-bottom: none; }
+    .doc-control th, .doc-control td {
+      border: none;
+      padding: 2px 0;
+    }
+    .doc-control th { color: var(--gray-500); }
+
+    select.status-select { padding: 9px 8px; }
+    .remove-row-btn { width: 30px; height: 30px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <span id="saveStatus" class="save-status" aria-live="polite"></span>
+    <div class="toolbar-actions">
+      <input type="file" id="loadFileInput" accept="application/json,.json" style="display:none;">
+      <button id="loadBtn" type="button">Load Report</button>
+      <button id="saveBtn" type="button">Save Report</button>
+      <button id="resetBtn" type="button">Reset Report</button>
+      <button id="printBtn" type="button" class="primary">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <div class="logo-banner">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABfwAAAHWCAYAAAAivEjBAAAACXBIWXMAAC4jAAAuIwF4pT92AAAF92lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0NDYwLCAyMDIwLzA1LzEyLTE2OjA0OjE3ICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMjItMDItMjRUMDk6MDk6NDQtMDU6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDIyLTAyLTI0VDA5OjEwOjMzLTA1OjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDIyLTAyLTI0VDA5OjEwOjMzLTA1OjAwIiBkYzpmb3JtYXQ9ImltYWdlL3BuZyIgcGhvdG9zaG9wOkNvbG9yTW9kZT0iMyIgcGhvdG9zaG9wOklDQ1Byb2ZpbGU9InNSR0IgSUVDNjE5NjYtMi4xIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjBjYzQ0OGY4LTQxZWMtNDYyNi1hMGY2LTY1ZWQ5NmU2YTc3OCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOmI1YTJkNjg0LWE1MGUtOWQ0Yi1iZWQ4LTJjYWI0YmY3ZWIwMyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjE3ZWE1YjA3LTRlNDktNGRkMC04NTU3LTI3NmE4NmNmM2RmOSI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MTdlYTViMDctNGU0OS00ZGQwLTg1NTctMjc2YTg2Y2YzZGY5IiBzdEV2dDp3aGVuPSIyMDIyLTAyLTI0VDA5OjA5OjQ0LTA1OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MGNjNDQ4ZjgtNDFlYy00NjI2LWEwZjYtNjVlZDk2ZTZhNzc4IiBzdEV2dDp3aGVuPSIyMDIyLTAyLTI0VDA5OjEwOjMzLTA1OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMiAoTWFjaW50b3NoKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz7VUJsAAABsHUlEQVR4nO3dTYwk657X919cDrq8DVXXIFlGmMq7oAQLTuUVRwiQTMV12WZkW3TewV7Ym8q7GBaWrM6LlN5ZHe1tWTp5NDtYdPYGpDHDyUYYhoGcE80C0KjQyS4WSM3iZkkjLBsNt+peBhjNS3gRT3ZXV9dLPJHPE/+IyO9HKp1T1U/G86vKzMiIfzzxPElRFAIAAAAAAAAAAN32DesAAAAAAAAAAABgexT8AQAAAAAAAADoAQr+AAAAAAAAAAD0AAV/AAAAAAAAAAB6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" alt="Bedding Industries of America logo">
+      <div class="eyebrow">Quality Assurance</div>
+    </div>
+
+    <div class="title-bar">
+      <div class="eyebrow">Plant Floor Walkthrough &mdash; Observation-Based GMP Audit</div>
+      <h1>Factory Walkthrough Audit Report</h1>
+      <div class="subtitle">Self-assessment against BIA's GMP Audit Criteria, Sections 1&ndash;9 &middot; BIA-F-006</div>
+    </div>
+    <div class="title-rule"></div>
+
+    <div class="doc-control">
+      <table>
+        <tr><th>Form Number</th><td>BIA-F-006 &mdash; Plant Floor Walkthrough tab</td></tr>
+        <tr><th>Title</th><td>Factory Walkthrough Audit Report</td></tr>
+        <tr><th>Revision</th><td>1</td></tr>
+        <tr><th>Facility / Plant</th><td><input type="text" data-field="facility" placeholder="Enter facility name"></td></tr>
+        <tr><th>Audit Date</th><td><input type="text" data-field="auditDate" placeholder="MM/DD/YYYY"></td></tr>
+        <tr><th>Auditor(s)</th><td><input type="text" data-field="auditors" placeholder="Enter auditor name(s)"></td></tr>
+        <tr><th>Shift / Areas Covered</th><td><input type="text" data-field="shiftAreas" placeholder="e.g. 1st shift &mdash; Quilting, Border, Closing, Foundation"></td></tr>
+        <tr><th>Audit Type</th><td><input type="text" data-field="auditType" placeholder="Internal self-audit &mdash; quarterly" value="Internal self-audit &mdash; quarterly"></td></tr>
+        <tr><th>Related Audit Clauses</th><td>GMP Audit Criteria &mdash; full criteria, Sections 1&ndash;9</td></tr>
+        <tr><th>Related Records</th><td>BIA-F-006 GMP Audit Readiness Checklist workbook (Dashboard, GMP Audit Checklist, Plant Floor Walkthrough, Industry Module, Daily Teardown Checklist tabs)</td></tr>
+        <tr><th>Process Owner</th><td>Quality Assurance</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Scoring Key</h2>
+      <div class="legend">
+        <div class="legend-chip legend-full"><span class="label">Full Compliance</span><span class="desc">&mdash; evidence exists, is current, meets the requirement as written</span></div>
+        <div class="legend-chip legend-minor"><span class="label">Minor Non-Compliance</span><span class="desc">&mdash; gap exists, no immediate safety/legal risk</span></div>
+        <div class="legend-chip legend-major"><span class="label">Major Non-Compliance</span><span class="desc">&mdash; real safety, legal, or customer risk, or no evidence at all</span></div>
+        <div class="legend-chip legend-na"><span class="label">Not Applicable</span><span class="desc">&mdash; requirement does not apply to this facility/process</span></div>
+        <div class="legend-chip legend-pending"><span class="label">Not Yet Assessed</span><span class="desc">&mdash; default state, update as walkthrough proceeds</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Readiness Summary</h2>
+      <div class="dashboard">
+        <div class="tile"><div class="tile-value" id="tileTotal">41</div><div class="tile-label">Total Items</div></div>
+        <div class="tile"><div class="tile-value" id="tileFull">0</div><div class="tile-label">Full Compliance</div></div>
+        <div class="tile"><div class="tile-value" id="tileMinor">0</div><div class="tile-label">Minor NC</div></div>
+        <div class="tile"><div class="tile-value" id="tileMajor">0</div><div class="tile-label">Major NC</div></div>
+        <div class="tile"><div class="tile-value" id="tileNA">0</div><div class="tile-label">N/A</div></div>
+        <div class="tile ready"><div class="tile-value" id="tileReady">0%</div><div class="tile-label">% Ready</div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Walkthrough Checklist</h2>
+      
+      <section class="category-block">
+        <h2 class="category-title">Lighting Requirements</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">1</td>
+            <td class="col-clause">4.7.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Inspection Area lighting minimum: 750 Lux</div>
+              <div class="verify-hint">Verify: Matt EOL, Foundation EOL, iComfort EOL, MiB EOL</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="1">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="1" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">2</td>
+            <td class="col-clause">4.7.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Production Area minimum: 550 Lux</div>
+              <div class="verify-hint">Verify: Quilting, Border, Matt Build, Closing</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="2">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="2" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">3</td>
+            <td class="col-clause">4.7.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Carton Packaging minimum: 300 Lux</div>
+              <div class="verify-hint">Verify: Carton Pack area</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="3">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="3" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">4</td>
+            <td class="col-clause">4.7.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Warehouse and Loading minimum: 150 Lux</div>
+              <div class="verify-hint">Verify: Shipping / Receiving</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="4">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="4" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="category-block">
+        <h2 class="category-title">Quality Policy</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">5</td>
+            <td class="col-clause">1.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Operators know the policy or where the policy is located</div>
+              <div class="verify-hint">Verify: Interview 3 employees</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="5">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="5" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="category-block">
+        <h2 class="category-title">Receiving Inspection</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">6</td>
+            <td class="col-clause">3.4.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Incoming Foam Inspection utilizing the IFD Meter (Indentation Force Deflection)</div>
+              <div class="verify-hint">Verify: Observe inspection on 2 separate pieces</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="6">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="6" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">7</td>
+            <td class="col-clause">7.2.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Receiving Inspection complete</div>
+              <div class="verify-hint">Verify: One BOL signed</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="7">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="7" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="category-block">
+        <h2 class="category-title">Manufacturing Process</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">8</td>
+            <td class="col-clause">4.4.6</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Is jewelry allowed to be worn</div>
+              <div class="verify-hint">Verify: Observations in production areas</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="8">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="8" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">9</td>
+            <td class="col-clause">4.4.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Are there open containers of food or drink</div>
+              <div class="verify-hint">Verify: Observations in production areas</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="9">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="9" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">10</td>
+            <td class="col-clause">2.2.5.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Needles controlled and not available at work stations</div>
+              <div class="verify-hint">Verify: Interview and observe access to needles — Quilting, Border, Closing, Foundation</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="10">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="10" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">11</td>
+            <td class="col-clause">2.2.5.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Disposal process for broken needles</div>
+              <div class="verify-hint">Verify: Interview and observe access to needles — Quilting, Border, Closing, Foundation</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="11">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="11" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">12</td>
+            <td class="col-clause">2.2.5.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Lost, Broken, or Bent Needle Tracking Log up to date</div>
+              <div class="verify-hint">Verify: Review log and incident reports</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="12">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="12" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">13</td>
+            <td class="col-clause">4.8.3</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Scissors, Denison Guns, Razor Blades numbered and controlled</div>
+              <div class="verify-hint">Verify: Numbering / control in 4 locations</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="13">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="13" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">14</td>
+            <td class="col-clause">4.8.4</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Metal Detector available</div>
+              <div class="verify-hint">Verify: One detector</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="14">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="14" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">15</td>
+            <td class="col-clause">3.10.4</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Document Control</div>
+              <div class="verify-hint">Verify: Audit latest revisions in production areas</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="15">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="15" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">16</td>
+            <td class="col-clause">7.7.5.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Work instructions available in all work areas</div>
+              <div class="verify-hint">Verify: Interview operators in production areas</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="16">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="16" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">17</td>
+            <td class="col-clause">7.7.10.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Standard work / work instructions in use reflect current manufacturing process</div>
+              <div class="verify-hint">Verify: Audit 2 areas for procedure compliance</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="17">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="17" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">18</td>
+            <td class="col-clause">3.9.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Control of non-conforming material</div>
+              <div class="verify-hint">Verify: Red Hold Tags in use</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="18">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="18" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">19</td>
+            <td class="col-clause">7.3.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Glue Flow Scales calibrated</div>
+              <div class="verify-hint">Verify: All available scales — 1) calibration/verification complete 2) certificate/results entered in Reliance 3) calibration/verification sticker present</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="19">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="19" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">20</td>
+            <td class="col-clause">7.7.6.7</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Verify 2″ compression of all glue application points</div>
+              <div class="verify-hint">Verify: Verify operator compression ≈ 2″ at two separate process locations</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="20">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="20" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">21</td>
+            <td class="col-clause">7.3.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Large Scrap Scale calibrated</div>
+              <div class="verify-hint">Verify: Available scale — 1) calibration/verification complete 2) certificate/results entered in Reliance 3) calibration/verification sticker present</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="21">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="21" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">22</td>
+            <td class="col-clause">7.3.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Tape Measures verified</div>
+              <div class="verify-hint">Verify: Review four tape measures — 1) calibration/verification complete 2) certificate/results entered in Reliance 3) calibration/verification sticker present</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="22">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="22" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">23</td>
+            <td class="col-clause">9.1.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Daily Mattress Teardown requirements met and meets specifications</div>
+              <div class="verify-hint">Verify: Daily requirements and spec conformance</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="23">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="23" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">24</td>
+            <td class="col-clause">9.2.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Teardown action items implemented</div>
+              <div class="verify-hint">Verify: Review two implemented action items</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="24">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="24" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">25</td>
+            <td class="col-clause">7.6.3</td>
+            <td class="col-criteria">
+              <div class="criteria-text">EOL Inspection Process</div>
+              <div class="verify-hint">Verify: Equipment / procedures and successfully completed inspection</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="25">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="25" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">26</td>
+            <td class="col-clause">7.7.5.3</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Sample and inspect work-in-process per customer or internal requirements</div>
+              <div class="verify-hint">Verify: Correct IWCs / foam toppers / materials; sample 2 Matt Builds</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="26">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="26" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">27</td>
+            <td class="col-clause">3.4.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Packaging recipes for Twin, Twin XL, Full, Queen, and King compressed products</div>
+              <div class="verify-hint">Verify: Verify correct recipe in use</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="27">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="27" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="category-block">
+        <h2 class="category-title">Plant General</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">28</td>
+            <td class="col-clause">4.4.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Cleanliness of bathrooms, including stalls, and cleaning checklist completed</div>
+              <div class="verify-hint">Verify: Verify restrooms clean with daily checklist available and completed</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="28">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="28" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">29</td>
+            <td class="col-clause">4.4.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Suitable and sufficient hand-cleaning facilities provided</div>
+              <div class="verify-hint">Verify: Soap / disinfectant / hot-warm water available</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="29">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="29" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">30</td>
+            <td class="col-clause">5.2.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Are chemical containers labeled</div>
+              <div class="verify-hint">Verify: Observation of labeled containers</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="30">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="30" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">31</td>
+            <td class="col-clause">5.2.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Chemical storage areas labeled with inventory list</div>
+              <div class="verify-hint">Verify: Observation of chemical storage locker</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="31">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="31" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">32</td>
+            <td class="col-clause">5.6.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">SDS Sheets available for all chemicals</div>
+              <div class="verify-hint">Verify: Audit one chemical for SDS</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="32">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="32" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">33</td>
+            <td class="col-clause">7.7.1.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Material not stored directly on the floor</div>
+              <div class="verify-hint">Verify: Observation of material in the facility</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="33">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="33" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">34</td>
+            <td class="col-clause">8.5</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Personal Protective Equipment (PPE) used by employees where required</div>
+              <div class="verify-hint">Verify: Are employees wearing required PPE</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="34">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="34" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">35</td>
+            <td class="col-clause">4.6.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Pest Control stations present with location map</div>
+              <div class="verify-hint">Verify: Observation of pest stations or map in place</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="35">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="35" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">36</td>
+            <td class="col-clause">7.4.2</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Forklift service records up to date</div>
+              <div class="verify-hint">Verify: Review one forklift service record</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="36">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="36" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">37</td>
+            <td class="col-clause">7.4.4</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Maintenance Cage organized</div>
+              <div class="verify-hint">Verify: Observe organization</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="37">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="37" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">38</td>
+            <td class="col-clause">7.4.4</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Spare Parts available and organized</div>
+              <div class="verify-hint">Verify: Observe organization</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="38">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="38" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">39</td>
+            <td class="col-clause">8.1</td>
+            <td class="col-criteria">
+              <div class="criteria-text">New Hire Training completed for new employees</div>
+              <div class="verify-hint">Verify: Review new hire checklist (checklist + performance review documented)</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="39">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="39" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-num">40</td>
+            <td class="col-clause">7.4.3</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Maintenance PM schedules available and up to date</div>
+              <div class="verify-hint">Verify: Sample one piece of equipment for PM completion</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="40">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="40" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="category-block">
+        <h2 class="category-title">Corrective Action Follow-up</h2>
+        <div class="table-scroll">
+          <table class="checklist-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-clause">Clause #</th>
+                <th class="col-criteria">Criteria</th>
+                <th class="col-status">Status</th>
+                <th class="col-notes">Observation Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td class="col-num">41</td>
+            <td class="col-clause">2.2.7.4</td>
+            <td class="col-criteria">
+              <div class="criteria-text">Verification of corrective actions from previous quarter&#x27;s GMP Audit (closed and executed)</div>
+              <div class="verify-hint">Verify: Review last quarter&#x27;s RCCM implementation and completion</div>
+            </td>
+            <td class="col-status">
+              <select class="status-select" data-row="41">
+                <option value="not-assessed">Not Yet Assessed</option>
+<option value="full">Full Compliance</option>
+<option value="minor">Minor Non-Compliance</option>
+<option value="major">Major Non-Compliance</option>
+<option value="na">Not Applicable</option>
+              </select>
+            </td>
+            <td class="col-notes">
+              <textarea class="notes-field" data-row="41" rows="2" placeholder="Observation notes…"></textarea>
+            </td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">General Comments &amp; Observations</h2>
+      <p class="comments-hint">Use this space for anything that doesn't fit elsewhere &mdash; overall impressions, positive observations, trends across areas, or context for the findings below.</p>
+      <textarea class="comments-field" id="commentsField" rows="8" placeholder="Enter general comments and observations here&hellip;"></textarea>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Findings &amp; Corrective Action Log</h2>
+      <div class="table-scroll">
+      <table class="findings-table" id="findingsTable">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th style="width:70px;">Clause #</th>
+            <th>Description of Non-Conformance</th>
+            <th style="width:80px;">Severity</th>
+            <th>Corrective Action / Containment</th>
+            <th style="width:110px;">Owner</th>
+            <th style="width:100px;">Target Date</th>
+            <th style="width:90px;">Status</th>
+            <th class="col-remove no-print" style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="findingsBody">
+          
+          <tr>
+            <td class="row-num">1</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+          <tr>
+            <td class="row-num">2</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+          <tr>
+            <td class="row-num">3</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+          <tr>
+            <td class="row-num">4</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+          <tr>
+            <td class="row-num">5</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+          <tr>
+            <td class="row-num">6</td>
+            <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><input type="text" data-field="owner" placeholder="Owner"></td>
+            <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
+            <td><input type="text" data-field="status" placeholder="Open"></td>
+            <td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <button type="button" id="addFindingRowBtn" class="add-row-btn no-print">+ Add Line</button>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Auditor Sign-Off</h2>
+      <div class="signoff">
+        <div class="signoff-block">
+          <h3>Conducted By</h3>
+          <div class="signoff-field"><label>Auditor Name</label><input type="text" data-field="auditorName"></div>
+          <div class="signoff-field"><label>Signature</label><input type="text" data-field="auditorSignature"></div>
+          <div class="signoff-field"><label>Date</label><input type="text" data-field="auditorDate" placeholder="MM/DD/YYYY"></div>
+        </div>
+        <div class="signoff-block">
+          <h3>Reviewed By</h3>
+          <div class="signoff-field"><label>QA / Plant Manager Name</label><input type="text" data-field="reviewerName"></div>
+          <div class="signoff-field"><label>Signature</label><input type="text" data-field="reviewerSignature"></div>
+          <div class="signoff-field"><label>Date</label><input type="text" data-field="reviewerDate" placeholder="MM/DD/YYYY"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>BIA-F-006 &mdash; GMP Audit Readiness Checklist, Plant Floor Walkthrough tab &middot; Rev. 1</span>
+      <span>Confidential &mdash; Internal Use Only</span>
+    </div>
+
+  </div>
+
+<script>
+  (function() {
+    var selects = Array.prototype.slice.call(document.querySelectorAll('.status-select'));
+
+    function recalc() {
+      var counts = { full: 0, minor: 0, major: 0, na: 0, 'not-assessed': 0 };
+      selects.forEach(function(sel) {
+        counts[sel.value] = (counts[sel.value] || 0) + 1;
+        sel.setAttribute('data-status', sel.value);
+      });
+      var total = selects.length;
+      var applicable = total - counts.na;
+      var ready = applicable > 0 ? Math.round((counts.full / applicable) * 100) : 0;
+
+      document.getElementById('tileFull').textContent = counts.full;
+      document.getElementById('tileMinor').textContent = counts.minor;
+      document.getElementById('tileMajor').textContent = counts.major;
+      document.getElementById('tileNA').textContent = counts.na;
+      document.getElementById('tileReady').textContent = ready + '%';
+    }
+
+    selects.forEach(function(sel) {
+      sel.addEventListener('change', recalc);
+    });
+    recalc();
+
+    // --- Findings & Corrective Action Log: add/remove lines ---
+    var findingsBody = document.getElementById('findingsBody');
+    var addFindingRowBtn = document.getElementById('addFindingRowBtn');
+
+    function renumberFindings() {
+      var rows = findingsBody.querySelectorAll('tr');
+      rows.forEach(function(row, idx) {
+        var numCell = row.querySelector('.row-num');
+        if (numCell) numCell.textContent = idx + 1;
+      });
+    }
+
+    function makeFindingRow() {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="row-num"></td>' +
+        '<td><input type="text" data-field="clause" placeholder="&mdash;"></td>' +
+        '<td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>' +
+        '<td><input type="text" data-field="severity" placeholder="Minor/Major"></td>' +
+        '<td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>' +
+        '<td><input type="text" data-field="owner" placeholder="Owner"></td>' +
+        '<td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>' +
+        '<td><input type="text" data-field="status" placeholder="Open"></td>' +
+        '<td class="col-remove no-print"><button type="button" class="remove-row-btn" title="Remove this line">&times;</button></td>';
+      return tr;
+    }
+
+    addFindingRowBtn.addEventListener('click', function() {
+      findingsBody.appendChild(makeFindingRow());
+      renumberFindings();
+    });
+
+    findingsBody.addEventListener('click', function(e) {
+      var btn = e.target.closest ? e.target.closest('.remove-row-btn') : null;
+      if (!btn) return;
+      var row = btn.closest('tr');
+      if (!row) return;
+      if (findingsBody.querySelectorAll('tr').length <= 1) {
+        row.querySelectorAll('input, textarea').forEach(function(el) { el.value = ''; });
+        return;
+      }
+      row.parentNode.removeChild(row);
+      renumberFindings();
+    });
+
+    document.getElementById('printBtn').addEventListener('click', function() {
+      window.print();
+    });
+
+    // --- Save / Load report state as a downloadable JSON file ---
+    var saveStatusEl = document.getElementById('saveStatus');
+    var loadFileInput = document.getElementById('loadFileInput');
+
+    function setSaveStatus(msg) {
+      if (saveStatusEl) saveStatusEl.textContent = msg;
+    }
+
+    function sanitizeFilePart(s) {
+      return (s || '').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
+    }
+
+    function gatherState() {
+      var state = {
+        version: 1,
+        title: 'BIA Factory Walkthrough Audit Report',
+        savedAt: new Date().toISOString(),
+        docControl: {},
+        checklist: {},
+        comments: '',
+        findings: [],
+        signoff: {}
+      };
+
+      document.querySelectorAll('.doc-control [data-field]').forEach(function(el) {
+        state.docControl[el.getAttribute('data-field')] = el.value;
+      });
+
+      selects.forEach(function(sel) {
+        var row = sel.getAttribute('data-row');
+        var notes = document.querySelector('.notes-field[data-row="' + row + '"]');
+        state.checklist[row] = { status: sel.value, notes: notes ? notes.value : '' };
+      });
+
+      var commentsField = document.getElementById('commentsField');
+      state.comments = commentsField ? commentsField.value : '';
+
+      findingsBody.querySelectorAll('tr').forEach(function(row) {
+        var entry = {};
+        row.querySelectorAll('[data-field]').forEach(function(el) {
+          entry[el.getAttribute('data-field')] = el.value;
+        });
+        state.findings.push(entry);
+      });
+
+      document.querySelectorAll('.signoff-field [data-field]').forEach(function(el) {
+        state.signoff[el.getAttribute('data-field')] = el.value;
+      });
+
+      return state;
+    }
+
+    function applyState(state) {
+      state = state || {};
+
+      var dc = state.docControl || {};
+      document.querySelectorAll('.doc-control [data-field]').forEach(function(el) {
+        var key = el.getAttribute('data-field');
+        el.value = dc.hasOwnProperty(key) ? dc[key] : '';
+      });
+
+      var checklist = state.checklist || {};
+      selects.forEach(function(sel) {
+        var row = sel.getAttribute('data-row');
+        var entry = checklist[row];
+        sel.value = (entry && entry.status) ? entry.status : 'not-assessed';
+        var notes = document.querySelector('.notes-field[data-row="' + row + '"]');
+        if (notes) notes.value = entry ? (entry.notes || '') : '';
+      });
+
+      var commentsField = document.getElementById('commentsField');
+      if (commentsField) commentsField.value = state.comments || '';
+
+      findingsBody.innerHTML = '';
+      var findings = (state.findings && state.findings.length) ? state.findings : [{}];
+      findings.forEach(function(entry) {
+        var row = makeFindingRow();
+        findingsBody.appendChild(row);
+        row.querySelectorAll('[data-field]').forEach(function(el) {
+          var key = el.getAttribute('data-field');
+          el.value = entry[key] || '';
+        });
+      });
+      renumberFindings();
+
+      var signoff = state.signoff || {};
+      document.querySelectorAll('.signoff-field [data-field]').forEach(function(el) {
+        var key = el.getAttribute('data-field');
+        el.value = signoff[key] || '';
+      });
+
+      recalc();
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', function() {
+      var state = gatherState();
+      var json = JSON.stringify(state, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var facility = sanitizeFilePart(state.docControl.facility) || 'Report';
+      var dateStamp = sanitizeFilePart(state.docControl.auditDate) || new Date().toISOString().slice(0, 10);
+      var filename = 'BIA-Factory-Walkthrough_' + facility + '_' + dateStamp + '.json';
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      setSaveStatus('Saved ' + filename);
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', function() {
+      loadFileInput.value = '';
+      loadFileInput.click();
+    });
+
+    loadFileInput.addEventListener('change', function(e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (!window.confirm('Loading a report will replace everything currently on this page. Continue?')) {
+        loadFileInput.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function() {
+        try {
+          var state = JSON.parse(reader.result);
+          applyState(state);
+          setSaveStatus('Loaded ' + file.name);
+        } catch (err) {
+          window.alert('Could not read that file \u2014 it does not look like a saved report (JSON).');
+        }
+      };
+      reader.onerror = function() {
+        window.alert('There was a problem reading that file.');
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      if (!window.confirm('Clear all statuses, notes, and entered fields on this report?')) return;
+      applyState({});
+      loadFileInput.value = '';
+      setSaveStatus('');
+    });
+  })();
+</script>
+
+</body>
+</html>
