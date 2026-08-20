@@ -50,6 +50,19 @@
     box-shadow: 0 4px 24px rgba(23,23,23,0.10);
   }
 
+  /* Shown only when JavaScript can't run (e.g. an iOS Quick Look preview
+     instead of a real Safari tab) — every button on this page depends on
+     JS, so this is the one thing that still explains why. */
+  .noscript-banner {
+    max-width: 960px;
+    margin: 12px auto 0;
+    padding: 14px 18px;
+    border-radius: 8px;
+    background: var(--status-minor-bg);
+    color: var(--status-minor-text);
+    font: 500 14px/1.5 var(--font-body);
+  }
+
   /* Toolbar (screen only) */
   .toolbar {
     max-width: 960px;
@@ -299,6 +312,13 @@
     color: var(--ink);
   }
 
+  /* Print-only mirrors: textareas clip to their scrollable box when printed,
+     so we swap each one for a plain text block (populated by JS just before
+     printing) that shows the full content and grows with it. */
+  .print-mirror {
+    display: none;
+  }
+
   /* Comments & observations */
   .comments-hint {
     font-size: 13px;
@@ -373,10 +393,6 @@
   }
   .add-row-btn:hover { background: var(--blue-100, #cbe4f4); }
 
-  @media print {
-    .no-print { display: none !important; }
-  }
-
   /* Sign-off */
   .signoff {
     display: grid;
@@ -426,12 +442,70 @@
     gap: 8px;
   }
 
+  @page {
+    margin: 12mm 11mm;
+  }
+
   @media print {
+    .no-print { display: none !important; }
+    .noscript-banner { display: none !important; }
     body { background: var(--white); }
     .toolbar { display: none; }
     .page { box-shadow: none; max-width: none; }
-    .category-block { page-break-inside: avoid; }
     select.status-select { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Tighten spacing so pages carry more content and gaps stay small */
+    .logo-banner { padding: 10px 24px; }
+    .logo-banner img { height: 32px; }
+    .title-bar { padding: 14px 24px 10px; }
+    .title-bar h1 { font-size: 30px; }
+    .title-bar .subtitle { font-size: 13px; }
+    .doc-control { padding: 10px 24px; }
+    .doc-control th, .doc-control td { padding: 5px 12px; }
+    .section { padding: 4px 24px 12px; }
+    .section-title { margin: 10px 0 8px; font-size: 19px; }
+    .category-block { margin-bottom: 10px; }
+    .category-title { margin: 0 0 6px; padding-bottom: 4px; }
+    .legend { gap: 6px; margin-bottom: 4px; }
+    .legend-chip { padding: 6px 10px; }
+    .dashboard { gap: 8px; margin-bottom: 4px; }
+    .tile { padding: 8px 6px; }
+
+    /* Never split a single checklist/findings row across two pages, but let
+       the table itself flow across pages instead of jumping as one solid
+       block — that's what was leaving large gaps of empty white space. */
+    .checklist-table tr, .findings-table tr { break-inside: avoid; page-break-inside: avoid; }
+    .checklist-table thead, .findings-table thead { display: table-header-group; }
+
+    /* Keep a heading glued to the content that follows it, so a header never
+       prints alone at the bottom of a page while its content starts fresh
+       on the next one. */
+    .section-title, .category-title { break-after: avoid; page-break-after: avoid; }
+
+    /* Small self-contained blocks: keep each one intact rather than letting
+       it split awkwardly across a page boundary. */
+    .legend, .dashboard, .signoff, .doc-control table { break-inside: avoid; page-break-inside: avoid; }
+
+    /* Textareas clip their content to the on-screen box when printed — show
+       the full-text mirror instead (populated by JS just before printing). */
+    textarea { display: none !important; }
+    .print-mirror {
+      display: block !important;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font: 400 13px/1.4 var(--font-body);
+      color: var(--ink);
+      min-height: 1.4em;
+    }
+    .print-mirror-comments {
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.55;
+      min-height: 2.8em;
+    }
   }
 
   @media (max-width: 720px) {
@@ -482,6 +556,12 @@
 </style>
 </head>
 <body>
+
+  <noscript>
+    <div class="noscript-banner">
+      This report needs JavaScript to fill out, print, or save &mdash; and it looks like the page you're viewing has JavaScript turned off. This usually happens when a browser opens the file as a quick preview (for example, tapping it in Files or Mail on iPhone) instead of loading it as a real webpage. Open it in Safari or Chrome as a normal page &mdash; from Files, use Share &rarr; and choose your browser, or open it from a hosted link &mdash; and the Print, Save, and Load buttons will work.
+    </div>
+  </noscript>
 
   <div class="toolbar">
     <span id="saveStatus" class="save-status" aria-live="polite"></span>
@@ -583,6 +663,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="1" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -603,6 +684,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="2" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -623,6 +705,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="3" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -643,6 +726,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="4" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -683,6 +767,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="5" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -723,6 +808,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="6" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -743,6 +829,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="7" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -783,6 +870,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="8" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -803,6 +891,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="9" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -823,6 +912,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="10" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -843,6 +933,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="11" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -863,6 +954,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="12" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -883,6 +975,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="13" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -903,6 +996,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="14" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -923,6 +1017,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="15" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -943,6 +1038,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="16" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -963,6 +1059,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="17" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -983,6 +1080,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="18" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1003,6 +1101,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="19" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1023,6 +1122,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="20" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1043,6 +1143,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="21" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1063,6 +1164,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="22" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1083,6 +1185,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="23" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1103,6 +1206,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="24" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1123,6 +1227,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="25" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1143,6 +1248,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="26" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1163,6 +1269,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="27" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -1203,6 +1310,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="28" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1223,6 +1331,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="29" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1243,6 +1352,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="30" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1263,6 +1373,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="31" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1283,6 +1394,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="32" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1303,6 +1415,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="33" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1323,6 +1436,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="34" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1343,6 +1457,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="35" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1363,6 +1478,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="36" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1383,6 +1499,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="37" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1403,6 +1520,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="38" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1423,6 +1541,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="39" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
           <tr>
@@ -1443,6 +1562,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="40" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -1483,6 +1603,7 @@
             </td>
             <td class="col-notes">
               <textarea class="notes-field" data-row="41" rows="2" placeholder="Observation notes…"></textarea>
+              <div class="print-mirror"></div>
             </td>
           </tr>
             </tbody>
@@ -1495,6 +1616,7 @@
       <h2 class="section-title">General Comments &amp; Observations</h2>
       <p class="comments-hint">Use this space for anything that doesn't fit elsewhere &mdash; overall impressions, positive observations, trends across areas, or context for the findings below.</p>
       <textarea class="comments-field" id="commentsField" rows="8" placeholder="Enter general comments and observations here&hellip;"></textarea>
+      <div class="print-mirror print-mirror-comments"></div>
     </div>
 
     <div class="section">
@@ -1519,9 +1641,9 @@
           <tr>
             <td class="row-num">1</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1530,9 +1652,9 @@
           <tr>
             <td class="row-num">2</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1541,9 +1663,9 @@
           <tr>
             <td class="row-num">3</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1552,9 +1674,9 @@
           <tr>
             <td class="row-num">4</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1563,9 +1685,9 @@
           <tr>
             <td class="row-num">5</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1574,9 +1696,9 @@
           <tr>
             <td class="row-num">6</td>
             <td><input type="text" data-field="clause" placeholder="&mdash;"></td>
-            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>
+            <td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="severity" placeholder="Minor/Major"></td>
-            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>
+            <td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>
             <td><input type="text" data-field="owner" placeholder="Owner"></td>
             <td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>
             <td><input type="text" data-field="status" placeholder="Open"></td>
@@ -1656,9 +1778,9 @@
       tr.innerHTML =
         '<td class="row-num"></td>' +
         '<td><input type="text" data-field="clause" placeholder="&mdash;"></td>' +
-        '<td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea></td>' +
+        '<td><textarea data-field="description" rows="2" placeholder="Describe the finding"></textarea><div class="print-mirror"></div></td>' +
         '<td><input type="text" data-field="severity" placeholder="Minor/Major"></td>' +
-        '<td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea></td>' +
+        '<td><textarea data-field="correctiveAction" rows="2" placeholder="Corrective action"></textarea><div class="print-mirror"></div></td>' +
         '<td><input type="text" data-field="owner" placeholder="Owner"></td>' +
         '<td><input type="text" data-field="targetDate" placeholder="MM/DD/YYYY"></td>' +
         '<td><input type="text" data-field="status" placeholder="Open"></td>' +
@@ -1684,7 +1806,39 @@
       renumberFindings();
     });
 
-    document.getElementById('printBtn').addEventListener('click', function() {
+    // --- Print/PDF: mirror each textarea's full value into a plain block ---
+    // Textareas only render their visible scrollable box when printed, so
+    // just before printing we copy the live value into a sibling div that
+    // prints as ordinary flowing text (see .print-mirror in the stylesheet).
+    function syncPrintMirrors() {
+      document.querySelectorAll('textarea').forEach(function(ta) {
+        var mirror = ta.nextElementSibling;
+        if (mirror && mirror.classList.contains('print-mirror')) {
+          mirror.textContent = ta.value || '';
+        }
+      });
+    }
+    window.addEventListener('beforeprint', syncPrintMirrors);
+
+    // iOS has no browser chrome to hang a print sheet off of when a page is
+    // launched from a Home Screen icon ("standalone" mode) — window.print()
+    // is simply a no-op there, silently. Detect that case and hand off to a
+    // real Safari tab instead of leaving the button looking broken.
+    var isStandalone = (window.navigator.standalone === true) ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    var printBtn = document.getElementById('printBtn');
+
+    if (isStandalone) {
+      printBtn.textContent = 'Open in Safari to Print';
+    }
+
+    printBtn.addEventListener('click', function() {
+      if (isStandalone) {
+        window.open(window.location.href, '_blank');
+        setSaveStatus('Printing isn\'t available from the Home Screen icon \u2014 opening this report in Safari instead.');
+        return;
+      }
+      syncPrintMirrors();
       window.print();
     });
 
